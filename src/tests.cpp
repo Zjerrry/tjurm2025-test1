@@ -7,18 +7,33 @@ int my_strlen(char *str) {
      */
 
     // IMPLEMENT YOUR CODE HERE
-    return 0;
+    int l=0;
+    while(str[l]  !='\0'){
+        l++;
+    }
+
+    return l;
 }
 
 
+
 // 练习2，实现库函数strcat
-void my_strcat(char *str_1, char *str_2) {
+ void my_strcat(char *str_1, char *str_2) { 
     /**
      * 将字符串str_2拼接到str_1之后，我们保证str_1指向的内存空间足够用于添加str_2。
      * 注意结束符'\0'的处理。
      */
 
     // IMPLEMENT YOUR CODE HERE
+    while(*str_1 !='\0'){
+        str_1++;
+    }
+    while(*str_2 !='\0'){
+        *str_1=*str_2;
+        str_1++;
+        str_2++;
+    }
+    *str_1='\0';
 }
 
 
@@ -31,7 +46,20 @@ char* my_strstr(char *s, char *p) {
      */
 
     // IMPLEMENT YOUR CODE HERE
-    return 0;
+    int l=0;
+    while(p[l]!='\0'){
+        l++;
+    }
+    for(int i=0;s[i]!='\0';i++){
+        int tmp=0;
+        while(tmp<l && s[i+tmp]==p[tmp]){
+            tmp++;
+        }
+        if(tmp==l){
+            return &s[i];
+        }
+    }
+    return nullptr;
 }
 
 
@@ -97,6 +125,16 @@ void rgb2gray(float *in, float *out, int h, int w) {
 
     // IMPLEMENT YOUR CODE HERE
     // ...
+    for(int i=0;i<h;i++){
+        for(int j=0;j<w;j++){
+            int Blue=3*(i*w+j);
+            float b=in[Blue];
+            float g=in[Blue-1];
+            float r=in[Blue-2];
+            *out=0.1140*b+0.5870*g+0.2989*r;
+            out++;
+        }
+    }
 }
 
 // 练习5，实现图像处理算法 resize：缩小或放大图像
@@ -165,7 +203,7 @@ void resize(float *in, float *out, int h, int w, int c, float scale) {
      *
      *                     (Dx - dx)(Dy - dy)         dx(Dy - dy)
      *          Q = P1 * ———————————————————— + P2 * ————————————— +
-     *                          Dx * Dy                 Dx * Dy
+     *                          Dx * Dy                 Dx * Dy 
      *
      *                    (Dx - dx)dy           dxdy
      *              P3 * ————————————— + P4 * —————————
@@ -178,7 +216,7 @@ void resize(float *in, float *out, int h, int w, int c, float scale) {
      *      则有 x' = x / scale, y' = y / scale，
      *
      *      现在，对于每个目标图片中的像素点 (x, y)：
-     *          1. 找到对应的源图片中的像素点 (x', y')
+     *          1. 找到对应的源图片中的像素点 (x', y')ok
      *          2. 找到其在原图中的四个邻居点 (这四个邻居是相邻的四个点，组成一个正方形)
      *          3. 用双线性插值法计算出 该像素点 的值
      *
@@ -198,9 +236,27 @@ void resize(float *in, float *out, int h, int w, int c, float scale) {
 
     int new_h = h * scale, new_w = w * scale;
     // IMPLEMENT YOUR CODE HERE
-
+    for(int i=0;i<new_h;i++){
+        for(int j=0;j<new_w;j++){
+            float x0=j/scale;
+            float y0=i/scale;
+            int x1=static_cast<int>(x0);
+            int y1=static_cast<int>(y0);
+            int x2=(x1+1)<w? (x1+1):x1;
+            int y2=(y1+1)<h? (y1+1):y1;
+            float dx=x0-x1;
+            float dy=y0-y1;
+            for(int u=0;u<c;u++){
+                float p1=in[(y1*w+x1)*c+u];
+                float p2=in[(y1*w+x2)*c+u];
+                float p3=in[(y2*w+x1)*c+u];
+                float p4=in[(y2*w+x2)*c+u];
+                float q=(1-dy)*((1-dx)*p1+dx*p2)+dy*((1-dx)*p3+dx*p4);
+                out[(i*new_w+j)*c+u]=q;
+            }
+        }
+    }
 }
-
 
 // 练习6，实现图像处理算法：直方图均衡化
 void hist_eq(float *in, int h, int w) {
@@ -221,4 +277,21 @@ void hist_eq(float *in, int h, int w) {
      */
 
     // IMPLEMENT YOUR CODE HERE
+    int hist_0[256]={0};
+    for(int i=0;i<h;i++){
+        for(int j=0;j<w;j++){
+            hist_0[static_cast<int>(in[i*w+j])]++;
+        }
+    }
+    float cdf[256]={0};
+    int N=h*w;
+    for(int i=0;i<256;i++){
+        cdf[i]=(hist_0[i]+(i>0? hist_0[i-1]:0))/(static_cast<float>(N));
+    }
+     for(int i=0;i<h;i++){
+        for(int j=0;j<w;j++){
+            int tmp=static_cast<int>(in[i*w+j]);
+            in[i*w+j]=static_cast<float>(cdf[tmp]*255);
+        }
+     }
 }
